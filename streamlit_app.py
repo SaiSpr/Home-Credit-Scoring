@@ -126,7 +126,7 @@ fig1 = shap.waterfall_plot(shap.Explanation(values=shap_values_customer,
                                      feature_names=df.columns.tolist()),
                                      max_display=10)
 st.set_option('deprecation.showPyplotGlobalUse', False)
-shap.pyplot(fig1)
+shap.force_plot(fig1)
 
 # st_shap(shap.pyplot(fig1))
 
@@ -139,7 +139,7 @@ if checkbox_val:
     index_group = df_group.index
     shap_values_group = shap_values[index_group]
     fig2 = shap.summary_plot(shap_values_group, df.iloc[index_group,1:-2])
-    st.pyplot(fig2)
+    st.force_plot(fig2)
     
     
 #     st_shap(st.pyplot(fig2))
