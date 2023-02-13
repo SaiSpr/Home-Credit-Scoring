@@ -6,7 +6,7 @@ import numpy as np
 
 
 
-from streamlit_shap import st_shap
+# from streamlit_shap import st_shap
 # import plotly_express as px
 
 #Affichage des titres du Dashboard
