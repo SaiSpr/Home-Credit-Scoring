@@ -1,172 +1,143 @@
-# import streamlit as st
-# import pandas as pd
-# import joblib
-# import shap
-# import numpy as np
+import streamlit as st
+import pandas as pd
+import joblib
+import shap
+import numpy as np
+
+from streamlit_shap import st_shap
+
+from sklearn.model_selection import train_test_split
+import xgboost
 
 
 
-# # from streamlit_shap import st_shap
-# # import plotly_express as px
+# from streamlit_shap import st_shap
+# import plotly_express as px
 
-# #Affichage des titres du Dashboard
-# st.title('Dashboard Prêt à dépenser - Scoring')
-# st.write("Visualisez et comparer les scores de vos clients !")
+#Affichage des titres du Dashboard
+st.title('Dashboard Prêt à dépenser - Scoring')
+st.write("Visualisez et comparer les scores de vos clients !")
 
-# #Chargement des données
-# @st.cache
-# def load_data(file_name):
-#     data = joblib.load(file_name)
-#     return data
-# df = load_data("data_customers.pkl")
-
-
-# # Chargement du modèle
-# @st.cache(hash_funcs={'xgboost.sklearn.XGBClassifier': id})
-# def load_model(file_name):
-#     model = joblib.load(file_name)
-#     return model
-
-# XGBoost_model = load_model("best_model_XGBoost_pickle.pkl")
-
-# # Chargement des données SHAP
-# @st.cache(hash_funcs={'xgboost.sklearn.XGBClassifier': id})
-# def load_shap(df, model):
-#     df_shap = df.iloc[:,1:-2]
-#     shap.initjs()
-#     explainer = shap.TreeExplainer(model)
-#     explainer_base_value = round(explainer.expected_value[0],3)
-#     shap_values = explainer.shap_values(df_shap)
-#     return explainer_base_value, shap_values
-
-# @st.cache
-# def parameters_waterfall(id_customer):
-#     df_customer_shap = df[df['SK_ID_CURR'] == id_customer].iloc[0,1:-2]
-#     index_customer = df[df['SK_ID_CURR'] == id_customer].iloc[:,1:-2].index
-#     shap_values_customer = shap_values[index_customer][0]
-#     return df_customer_shap, index_customer, shap_values_customer
+#Chargement des données
+@st.cache
+def load_data(file_name):
+    data = joblib.load(file_name)
+    return data
+df = load_data("data_customers.pkl")
 
 
-# #Mise en place des filtres
-# st.sidebar.title('Filtres')
-# # Filtre 1 GENDER
-# option1 = st.sidebar.selectbox('Sexe :',("Tous", "Homme", "Femme"))
-# sexe_filter = 1 if option1 == "Homme" else 0 if option1 == "Femme" else 2
+# Chargement du modèle
+@st.cache(hash_funcs={'xgboost.sklearn.XGBClassifier': id})
+def load_model(file_name):
+    model = joblib.load(file_name)
+    return model
 
-# # Filtre 2 NAME_CONTRACT_TYPE
-# option2 = st.sidebar.selectbox('Type de contrat :',("Tous", "Revolving loans", "Cash loans"))
-# contract_filter = 0 if option2 == "Revolving loans" else 1 if option2 == "Cash loans" else 2
+XGBoost_model = load_model("best_model_XGBoost_pickle.pkl")
 
-# # Filtre 3 AGE
-# max_age = round(max(-df['DAYS_BIRTH'])/365)
-# min_age = round(min(-df['DAYS_BIRTH'])/365)
-# min_slider, max_slider = st.sidebar.slider('Tranche d\'age', min_age, max_age, (min_age,max_age))
+# Chargement des données SHAP
+@st.cache(hash_funcs={'xgboost.sklearn.XGBClassifier': id})
+def load_shap(df, model):
+    df_shap = df.iloc[:,1:-2]
+    shap.initjs()
+    explainer = shap.TreeExplainer(model)
+    explainer_base_value = round(explainer.expected_value[0],3)
+    shap_values = explainer.shap_values(df_shap)
+    return explainer_base_value, shap_values
 
-# #Création du sous groupe de clients
-# df_group = df[["SK_ID_CURR", "NAME_CONTRACT_TYPE"
-#                   , "CODE_GENDER", "AMT_INCOME_TOTAL"
-#                   ,"CNT_CHILDREN","DAYS_BIRTH"
-#                   ,"SCORE","TARGET"]]
-# df_group = df_group[(df_group["DAYS_BIRTH"] < -min_slider*365) & (df_group["DAYS_BIRTH"] > -max_slider*365)]
-# df_group = df_group[df_group["CODE_GENDER"] != sexe_filter]
-# df_group = df_group[df_group["NAME_CONTRACT_TYPE"] != contract_filter]
-
-
-# #Sélection du client à étudier
-# st.sidebar.title('Sélectionnez un client')
-
-# # Filtre FINAL SK_ID_CURR
-# list_id = df_group['SK_ID_CURR'].unique().tolist()
-# id_customer = st.sidebar.selectbox('ID du client  :', list_id)
-# count_customers = df_group.shape[0]
-# # st.sidebar.write('Nombre de clients correspondant à vos filtres :', count_customers)
-# st.sidebar.write(count_customers, 'clients correspondant à vos filtres')
-
-# #Affichage des informations du client unique
-# df_customer = df[["SK_ID_CURR", "NAME_CONTRACT_TYPE"
-#                   , "CODE_GENDER", "AMT_INCOME_TOTAL"
-#                   ,"CNT_CHILDREN","DAYS_BIRTH"
-#                   ,"SCORE","TARGET"]]
-# df_customer = df_customer[df_customer['SK_ID_CURR'] == id_customer]
+@st.cache
+def parameters_waterfall(id_customer):
+    df_customer_shap = df[df['SK_ID_CURR'] == id_customer].iloc[0,1:-2]
+    index_customer = df[df['SK_ID_CURR'] == id_customer].iloc[:,1:-2].index
+    shap_values_customer = shap_values[index_customer][0]
+    return df_customer_shap, index_customer, shap_values_customer
 
 
-# date = "Non renseigné" if len(df_customer['DAYS_BIRTH']) == 0 else round(-df_customer['DAYS_BIRTH'].item()/365)
-# name_type_contract = "Revolving loans" if df_customer["NAME_CONTRACT_TYPE"].item() == 1 else "Cash loans"
-# code_gender = "Femme" if df_customer["CODE_GENDER"].item() == 1 else "Homme"
-# cnt_children = df_customer["CNT_CHILDREN"].item()
-# amt_income_total = str(int(df_customer["AMT_INCOME_TOTAL"].item())) + " $"
-# score = str(round(df_customer["SCORE"].item()*100)) + "%"
-# target = "Non Eligible" if df_customer["TARGET"].item() == 1 else "Eligible"
+#Mise en place des filtres
+st.sidebar.title('Filtres')
+# Filtre 1 GENDER
+option1 = st.sidebar.selectbox('Sexe :',("Tous", "Homme", "Femme"))
+sexe_filter = 1 if option1 == "Homme" else 0 if option1 == "Femme" else 2
 
-# st.write("ID client :", id_customer)
-# st.write("Sexe :", code_gender)
-# st.write("Age : " + str(date) + " ans")
-# st.write("Type de contrat :", name_type_contract)
-# st.write("Nombre d'enfants :", cnt_children)
-# st.write("Revenu total :", amt_income_total)
-# st.write("Probabilité de défaut :", score)
-# st.write("Statut du client :", target)
+# Filtre 2 NAME_CONTRACT_TYPE
+option2 = st.sidebar.selectbox('Type de contrat :',("Tous", "Revolving loans", "Cash loans"))
+contract_filter = 0 if option2 == "Revolving loans" else 1 if option2 == "Cash loans" else 2
 
-# if target == "Eligible":
-#     st.write("[Voir les offres de crédit adaptées au client](https://homecredit.ph/all-about-loans/terms-and-conditions/)")
-# else:
-#     st.write("[Proposer des alternatives à ce client ?](https://homecredit.ph/tips-stories/sali-na-sa-loan-in-a-million-raffle-promo/)")
+# Filtre 3 AGE
+max_age = round(max(-df['DAYS_BIRTH'])/365)
+min_age = round(min(-df['DAYS_BIRTH'])/365)
+min_slider, max_slider = st.sidebar.slider('Tranche d\'age', min_age, max_age, (min_age,max_age))
+
+#Création du sous groupe de clients
+df_group = df[["SK_ID_CURR", "NAME_CONTRACT_TYPE"
+                  , "CODE_GENDER", "AMT_INCOME_TOTAL"
+                  ,"CNT_CHILDREN","DAYS_BIRTH"
+                  ,"SCORE","TARGET"]]
+df_group = df_group[(df_group["DAYS_BIRTH"] < -min_slider*365) & (df_group["DAYS_BIRTH"] > -max_slider*365)]
+df_group = df_group[df_group["CODE_GENDER"] != sexe_filter]
+df_group = df_group[df_group["NAME_CONTRACT_TYPE"] != contract_filter]
+
+
+#Sélection du client à étudier
+st.sidebar.title('Sélectionnez un client')
+
+# Filtre FINAL SK_ID_CURR
+list_id = df_group['SK_ID_CURR'].unique().tolist()
+id_customer = st.sidebar.selectbox('ID du client  :', list_id)
+count_customers = df_group.shape[0]
+# st.sidebar.write('Nombre de clients correspondant à vos filtres :', count_customers)
+st.sidebar.write(count_customers, 'clients correspondant à vos filtres')
+
+#Affichage des informations du client unique
+df_customer = df[["SK_ID_CURR", "NAME_CONTRACT_TYPE"
+                  , "CODE_GENDER", "AMT_INCOME_TOTAL"
+                  ,"CNT_CHILDREN","DAYS_BIRTH"
+                  ,"SCORE","TARGET"]]
+df_customer = df_customer[df_customer['SK_ID_CURR'] == id_customer]
+
+
+date = "Non renseigné" if len(df_customer['DAYS_BIRTH']) == 0 else round(-df_customer['DAYS_BIRTH'].item()/365)
+name_type_contract = "Revolving loans" if df_customer["NAME_CONTRACT_TYPE"].item() == 1 else "Cash loans"
+code_gender = "Femme" if df_customer["CODE_GENDER"].item() == 1 else "Homme"
+cnt_children = df_customer["CNT_CHILDREN"].item()
+amt_income_total = str(int(df_customer["AMT_INCOME_TOTAL"].item())) + " $"
+score = str(round(df_customer["SCORE"].item()*100)) + "%"
+target = "Non Eligible" if df_customer["TARGET"].item() == 1 else "Eligible"
+
+st.write("ID client :", id_customer)
+st.write("Sexe :", code_gender)
+st.write("Age : " + str(date) + " ans")
+st.write("Type de contrat :", name_type_contract)
+st.write("Nombre d'enfants :", cnt_children)
+st.write("Revenu total :", amt_income_total)
+st.write("Probabilité de défaut :", score)
+st.write("Statut du client :", target)
+
+if target == "Eligible":
+    st.write("[Voir les offres de crédit adaptées au client](https://homecredit.ph/all-about-loans/terms-and-conditions/)")
+else:
+    st.write("[Proposer des alternatives à ce client ?](https://homecredit.ph/tips-stories/sali-na-sa-loan-in-a-million-raffle-promo/)")
     
 
-# def st_shap(plot, height=None):
-#     shap_html = f"<head>{shap.getjs()}</head><body>{plot.html()}</body>"
-#     components.html(shap_html, height=height)    
-    
-    
-# X = df.iloc[:,1:-2]    
-# explainer = shap.TreeExplainer(XGBoost_model)
-# shap_values = explainer.shap_values(df.iloc[:,1:-2])
+#Préparation de la visualitation SHAP
+explainer_base_value, shap_values = load_shap(df, XGBoost_model)
 
-# # visualize the first prediction's explanation (use matplotlib=True to avoid Javascript)
-# st_shap(shap.force_plot(explainer.expected_value, shap_values[0,:], X.iloc[0,:]))
+#On trace le premier graph décrivant le client unique
+df_customer_shap, index_customer, shap_values_customer = parameters_waterfall(id_customer)
+fig1 = shap.waterfall_plot(shap.Explanation(values=shap_values_customer,
+                                     base_values=explainer_base_value,
+                                     data=df_customer_shap,
+                                     feature_names=df.columns.tolist()),
+                                     max_display=10)
+st.set_option('deprecation.showPyplotGlobalUse', False)
+st.pyplot(fig1)
 
-# # visualize the training set predictions
-# st_shap(shap.force_plot(explainer.expected_value, shap_values, X), 400)    
-    
-
-
-    
-    
-    
-# st.write("1ebv",explainer_base_value)
-
-# st.write("1shap_values", shap_values)
-
-# #Préparation de la visualitation SHAP
-# explainer_base_value, shap_values = load_shap(df, XGBoost_model)
-
-
-# st.write("ebv",explainer_base_value)
-
-# st.write("shap_values", shap_values)
-
-# ##On trace le premier graph décrivant le client unique
-# df_customer_shap, index_customer, shap_values_customer = parameters_waterfall(id_customer)
-# fig1 = shap.waterfall_plot(shap.Explanation(values=shap_values_customer,
-#                                      base_values=explainer_base_value,
-#                                      data=df_customer_shap,
-#                                      feature_names=df.columns.tolist()),
-#                                      max_display=10)
-# st.set_option('deprecation.showPyplotGlobalUse', False)
-# shap.force_plot(fig1)
-
-# # st_shap(shap.pyplot(fig1))
-
-# # st_shap(shap.plots.waterfall(shap_values[0]), height=300)
-
-
-# # #On trace le second graph décrivant le sous groupe similaire au client
-# checkbox_val = st.checkbox("Afficher la comparaison des " + str(count_customers) + " clients")
-# if checkbox_val:
-#     index_group = df_group.index
-#     shap_values_group = shap_values[index_group]
-#     fig2 = shap.summary_plot(shap_values_group, df.iloc[index_group,1:-2])
-#     st.force_plot(fig2)
+#On trace le second graph décrivant le sous groupe similaire au client
+checkbox_val = st.checkbox("Afficher la comparaison des " + str(count_customers) + " clients")
+if checkbox_val:
+    index_group = df_group.index
+    shap_values_group = shap_values[index_group]
+    fig2 = shap.summary_plot(shap_values_group, df.iloc[index_group,1:-2])
+    st.pyplot(fig2)
     
   
 
@@ -223,56 +194,56 @@
 
 
 
-import streamlit as st
-from streamlit_shap import st_shap
-import shap
+# import streamlit as st
+# from streamlit_shap import st_shap
+# # import shap
 
-from sklearn.model_selection import train_test_split
-import xgboost
+# from sklearn.model_selection import train_test_split
+# import xgboost
 
-import numpy as np
-import pandas as pd
+# import numpy as np
+# import pandas as pd
 
 
-@st.experimental_memo
-def load_data():
-    return shap.datasets.adult()
+# @st.experimental_memo
+# def load_data():
+#     return shap.datasets.adult()
 
-@st.experimental_memo
-def load_model(X, y):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=7)
-    d_train = xgboost.DMatrix(X_train, label=y_train)
-    d_test = xgboost.DMatrix(X_test, label=y_test)
-    params = {
-        "eta": 0.01,
-        "objective": "binary:logistic",
-        "subsample": 0.5,
-        "base_score": np.mean(y_train),
-        "eval_metric": "logloss",
-        "n_jobs": -1,
-    }
-    model = xgboost.train(params, d_train, 10, evals = [(d_test, "test")], verbose_eval=100, early_stopping_rounds=20)
-    return model
+# @st.experimental_memo
+# def load_model(X, y):
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=7)
+#     d_train = xgboost.DMatrix(X_train, label=y_train)
+#     d_test = xgboost.DMatrix(X_test, label=y_test)
+#     params = {
+#         "eta": 0.01,
+#         "objective": "binary:logistic",
+#         "subsample": 0.5,
+#         "base_score": np.mean(y_train),
+#         "eval_metric": "logloss",
+#         "n_jobs": -1,
+#     }
+#     model = xgboost.train(params, d_train, 10, evals = [(d_test, "test")], verbose_eval=100, early_stopping_rounds=20)
+#     return model
 
-st.title("SHAP in Streamlit")
+# st.title("SHAP in Streamlit")
 
-# train XGBoost model
-X,y = load_data()
-X_display,y_display = shap.datasets.adult(display=True)
+# # train XGBoost model
+# X,y = load_data()
+# X_display,y_display = shap.datasets.adult(display=True)
 
-model = load_model(X, y)
+# model = load_model(X, y)
 
-# compute SHAP values
-explainer = shap.Explainer(model, X)
-shap_values = explainer(X)
+# # compute SHAP values
+# explainer = shap.Explainer(model, X)
+# shap_values = explainer(X)
 
-st_shap(shap.plots.waterfall(shap_values[0]), height=300)
-st_shap(shap.plots.beeswarm(shap_values), height=300)
+# st_shap(shap.plots.waterfall(shap_values[0]), height=300)
+# st_shap(shap.plots.beeswarm(shap_values), height=300)
 
-explainer = shap.TreeExplainer(model)
-shap_values = explainer.shap_values(X)
+# explainer = shap.TreeExplainer(model)
+# shap_values = explainer.shap_values(X)
 
-st_shap(shap.force_plot(explainer.expected_value, shap_values[0,:], X_display.iloc[0,:]), height=200, width=1000)
-st_shap(shap.force_plot(explainer.expected_value, shap_values[:1000,:], X_display.iloc[:1000,:]), height=400, width=1000)
+# st_shap(shap.force_plot(explainer.expected_value, shap_values[0,:], X_display.iloc[0,:]), height=200, width=1000)
+# st_shap(shap.force_plot(explainer.expected_value, shap_values[:1000,:], X_display.iloc[:1000,:]), height=400, width=1000)
 
 
