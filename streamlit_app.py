@@ -113,6 +113,26 @@ else:
     st.write("[Proposer des alternatives à ce client ?](https://homecredit.ph/tips-stories/sali-na-sa-loan-in-a-million-raffle-promo/)")
     
 
+def st_shap(plot, height=None):
+    shap_html = f"<head>{shap.getjs()}</head><body>{plot.html()}</body>"
+    components.html(shap_html, height=height)    
+    
+    
+    
+explainer = shap.TreeExplainer(XGBoost_model)
+shap_values = explainer.shap_values(df.iloc[:,1:-2])
+
+# visualize the first prediction's explanation (use matplotlib=True to avoid Javascript)
+st_shap(shap.force_plot(explainer.expected_value, shap_values[0,:], X.iloc[0,:]))
+
+# visualize the training set predictions
+st_shap(shap.force_plot(explainer.expected_value, shap_values, X), 400)    
+    
+
+
+    
+    
+    
 st.write("1ebv",explainer_base_value)
 
 st.write("1shap_values", shap_values)
