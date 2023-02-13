@@ -1,5 +1,4 @@
-IPython
-shap
+streamlit-shap
 pandas
 streamlit
 joblib
