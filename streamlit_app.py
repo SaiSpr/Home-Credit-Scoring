@@ -113,6 +113,9 @@ else:
     st.write("[Proposer des alternatives à ce client ?](https://homecredit.ph/tips-stories/sali-na-sa-loan-in-a-million-raffle-promo/)")
     
 
+st.write("1ebv",explainer_base_value)
+
+st.write("1shap_values", shap_values)
 
 #Préparation de la visualitation SHAP
 explainer_base_value, shap_values = load_shap(df, XGBoost_model)
