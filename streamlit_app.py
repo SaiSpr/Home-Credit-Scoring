@@ -183,7 +183,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 import xgboost
 
-shap.initjs()
 @st.cache
 def load_data():
     return shap.datasets.boston()
