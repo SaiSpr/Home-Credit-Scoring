@@ -118,6 +118,10 @@ else:
 explainer_base_value, shap_values = load_shap(df, XGBoost_model)
 
 
+st.write(explainer_base_value)
+
+st.write(shap_values)
+
 ##On trace le premier graph décrivant le client unique
 df_customer_shap, index_customer, shap_values_customer = parameters_waterfall(id_customer)
 fig1 = shap.waterfall_plot(shap.Explanation(values=shap_values_customer,
