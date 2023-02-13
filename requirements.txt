@@ -1,4 +1,3 @@
-pip install --upgrade pip
 IPython
 shap
 pandas
@@ -7,4 +6,4 @@ joblib
 xgboost
 numpy
 matplotlib
-pip install streamlit-shap
+streamlit-shap
