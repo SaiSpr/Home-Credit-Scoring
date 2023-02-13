@@ -5,4 +5,4 @@ joblib
 xgboost
 numpy
 matplotlib
-streamlit-shap
+pip install streamlit-shap
