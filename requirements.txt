@@ -6,4 +6,4 @@ joblib
 xgboost
 numpy
 matplotlib
-streamlit-shap
+
